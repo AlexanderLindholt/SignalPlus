@@ -20,7 +20,7 @@
  +++++++++++++++++++++++++                                                                          
       +++++                                                                                         
 
-v3.2.1
+v3.3.0
 
 An insanely fast, lightweight, fully typed and documented
 open-source signal module for Roblox, with dynamic types.
@@ -118,22 +118,17 @@ Connection.__index = Connection
 
 Connection.Disconnect = function(connection)
 	-- Verify connection.
-	if not connection.Index then return end
+	if not connection.Connected then return end
 	
 	-- Remove connection.
-	local signal = connection.Signal
-	local lastIndex = #signal
-	local index = connection.Index
-	if index == lastIndex then
-		signal[lastIndex] = nil
-	else
-		local last = signal[lastIndex]
-		last.Index = index
-		signal[index] = last
-		signal[lastIndex] = nil
+	connection.Connected = false
+	
+	local previous = connection.Previous
+	local next = connection.Next
+	previous.Next = next
+	if next then
+		next.Previous = previous
 	end
-	-- Remove index.
-	connection.Index = nil
 end
 
 -- Signal functions.
@@ -141,47 +136,59 @@ local Signal = {}
 Signal.__index = Signal
 
 Signal.Connect = function(signal, callback)
+	-- Cache linked list next.
+	local next = signal.Next
+	
 	-- Create connection.
 	local connection = {
-		Signal = signal,
-		Index = #signal + 1,
-		Callback = callback
+		Previous = signal,
+		Next = next,
+		Callback = callback,
+		
+		Connected = true
 	}
 	
 	-- Add connection.
-	table.insert(signal, connection)
+	if next then
+		next.Previous = connection
+	end
+	signal.Next = connection
 	
 	-- Return connection.
 	return setmetatable(connection, Connection)
 end
 Signal.Once = function(signal, callback)
+	-- Cache linked list next.
+	local next = signal.Next
+	
 	-- Create connection.
 	local connection = nil
 	connection = {
-		Signal = signal,
-		Index = #signal + 1,
+		Previous = signal,
+		Next = next,
 		Callback = function(...)
 			-- Remove connection.
-			local lastIndex = #signal
-			local index = connection.Index
-			if index == lastIndex then
-				signal[lastIndex] = nil
-			else
-				local last = signal[lastIndex]
-				last.Index = index
-				signal[index] = last
-				signal[lastIndex] = nil
+			connection.Connected = false
+			
+			local previous = connection.Previous
+			local next = connection.Next
+			previous.Next = next
+			if next then
+				next.Previous = previous
 			end
-			-- Remove index.
-			connection.Index = nil
 			
 			-- Fire callback.
 			callback(...)
-		end
+		end,
+		
+		Connected = true
 	}
 	
 	-- Add connection.
-	table.insert(signal, connection)
+	if next then
+		next.Previous = connection
+	end
+	signal.Next = connection
 	
 	-- Return connection.
 	return setmetatable(connection, Connection)
@@ -190,67 +197,73 @@ Signal.Wait = function(signal)
 	-- Save this thread to resume later.
 	local thread = coroutine.running()
 	
+	-- Cache linked list next.
+	local next = signal.Next
+	
 	-- Create connection.
 	local connection = nil
 	connection = {
-		Signal = signal,
-		Index = #signal + 1,
+		Previous = signal,
+		Next = next,
 		Callback = function(...)
 			-- Remove connection.
-			local lastIndex = #signal
-			local index = connection.Index
-			if index == lastIndex then
-				signal[lastIndex] = nil
-			else
-				local last = signal[lastIndex]
-				last.Index = index
-				signal[index] = last
-				signal[lastIndex] = nil
+			connection.Connected = false
+			
+			local previous = connection.Previous
+			local next = connection.Next
+			previous.Next = next
+			if next then
+				next.Previous = previous
 			end
-			-- Remove index.
-			connection.Index = nil
 			
 			-- Resume the thread.
 			if coroutine.status(thread) == "suspended" then -- To avoid errors.
 				local _, err = coroutine.resume(thread, ...)
 				if err then error(err, 2) end
 			end
-		end
+		end,
+		
+		Connected = true
 	}
 	
 	-- Add connection.
-	table.insert(signal, connection)
+	if next then
+		next.Previous = connection
+	end
+	signal.Next = connection
 	
 	-- Yield until the next fire, and return the arguments on resume.
 	return coroutine.yield()
 end
 
 Signal.Fire = function(signal, ...)
-	-- Resume all callback threads.
-	for index = #signal, 1, -1 do
+	local connection = signal.Next
+	if not connection then return end
+	while true do
 		-- Find or create a thread, and run the callback in it.
 		local length = #threads
 		if length == 0 then
 			local thread = coroutine.create(reusableThread)
 			coroutine.resume(thread)
-			task.spawn(thread, signal[index].Callback, thread, ...)
+			task.spawn(thread, connection.Callback, thread, ...)
 		else
 			local thread = threads[length]
 			threads[length] = nil -- Remove from free threads list.
-			task.spawn(thread, signal[index].Callback, thread, ...)
+			task.spawn(thread, connection.Callback, thread, ...)
 		end
+		
+		-- Traverse.
+		connection = connection.Next
+		if not connection then break end
 	end
 end
 
 Signal.DisconnectAll = function(signal)
-	table.clear(signal)
+	signal.Next = nil
 end
 Signal.Destroy = function(signal)
-	-- Disconnect all connections.
-	table.clear(signal)
-	
-	-- Unlink methods.
-	setmetatable(signal, nil)
+	signal.Next = nil -- Disconnect all connections.
+	setmetatable(signal, nil) -- Unlink methods.
 end
 
 -- Return signal creation function.
