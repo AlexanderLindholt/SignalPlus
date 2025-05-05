@@ -20,7 +20,7 @@
  +++++++++++++++++++++++++                                                                          
       +++++                                                                                         
 
-v3.3.0
+v3.3.1
 
 An insanely fast, lightweight, fully typed and documented
 open-source signal module for Roblox, with dynamic types.
@@ -61,6 +61,7 @@ SOFTWARE.
 
 -- Types.
 export type Connection = {
+	Connected: boolean,
 	Disconnect: typeof(
 		-- Disconnects the connection.
 		-- To reconnect, make a new connection.
@@ -238,8 +239,7 @@ end
 
 Signal.Fire = function(signal, ...)
 	local connection = signal.Next
-	if not connection then return end
-	while true do
+	while connection do
 		-- Find or create a thread, and run the callback in it.
 		local length = #threads
 		if length == 0 then
@@ -254,7 +254,6 @@ Signal.Fire = function(signal, ...)
 		
 		-- Traverse.
 		connection = connection.Next
-		if not connection then break end
 	end
 end
 
