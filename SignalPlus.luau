@@ -20,7 +20,7 @@
  +++++++++++++++++++++++++                                                                          
       +++++                                                                                         
 
-v3.3.1
+v3.3.2
 
 An insanely fast, lightweight, fully typed and documented
 open-source signal module for Roblox, with dynamic types.
@@ -245,11 +245,11 @@ Signal.Fire = function(signal, ...)
 		if length == 0 then
 			local thread = coroutine.create(reusableThread)
 			coroutine.resume(thread)
-			task.spawn(thread, connection.Callback, thread, ...)
+			task.defer(thread, connection.Callback, thread, ...)
 		else
 			local thread = threads[length]
 			threads[length] = nil -- Remove from free threads list.
-			task.spawn(thread, connection.Callback, thread, ...)
+			task.defer(thread, connection.Callback, thread, ...)
 		end
 		
 		-- Traverse.
