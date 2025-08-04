@@ -20,7 +20,7 @@
  +++++++++++++++++++++++++                                                                          
       +++++                                                                                         
 
-v3.3.2
+v3.4.0
 
 An insanely fast, lightweight, fully typed and documented
 open-source signal module for Roblox, with dynamic types.
@@ -126,10 +126,8 @@ Connection.Disconnect = function(connection)
 	
 	local previous = connection.Previous
 	local next = connection.Next
-	previous.Next = next
-	if next then
-		next.Previous = previous
-	end
+	if previous then previous.Next = next end
+	if next then next.Previous = previous end
 end
 
 -- Signal functions.
@@ -138,45 +136,42 @@ Signal.__index = Signal
 
 Signal.Connect = function(signal, callback)
 	-- Cache linked list next.
-	local next = signal.Next
+	local tail = signal.Tail
 	
 	-- Create connection.
 	local connection = {
-		Previous = signal,
-		Next = next,
+		Previous = signal.Head,
 		Callback = callback,
 		
 		Connected = true
 	}
 	
 	-- Add connection.
-	if next then
-		next.Previous = connection
+	if tail then
+		tail.Next = connection
+	else
+		signal.Tail = connection
 	end
-	signal.Next = connection
 	
 	-- Return connection.
 	return setmetatable(connection, Connection)
 end
 Signal.Once = function(signal, callback)
 	-- Cache linked list next.
-	local next = signal.Next
+	local tail = signal.Tail
 	
 	-- Create connection.
 	local connection = nil
 	connection = {
-		Previous = signal,
-		Next = next,
+		Previous = signal.Head,
 		Callback = function(...)
 			-- Remove connection.
 			connection.Connected = false
 			
 			local previous = connection.Previous
 			local next = connection.Next
-			previous.Next = next
-			if next then
-				next.Previous = previous
-			end
+			if previous then previous.Next = next end
+			if next then next.Previous = previous end
 			
 			-- Fire callback.
 			callback(...)
@@ -186,10 +181,11 @@ Signal.Once = function(signal, callback)
 	}
 	
 	-- Add connection.
-	if next then
-		next.Previous = connection
+	if tail then
+		tail.Next = connection
+	else
+		signal.Tail = connection
 	end
-	signal.Next = connection
 	
 	-- Return connection.
 	return setmetatable(connection, Connection)
@@ -199,23 +195,20 @@ Signal.Wait = function(signal)
 	local thread = coroutine.running()
 	
 	-- Cache linked list next.
-	local next = signal.Next
+	local tail = signal.Tail
 	
 	-- Create connection.
 	local connection = nil
 	connection = {
-		Previous = signal,
-		Next = next,
+		Previous = signal.Head,
 		Callback = function(...)
 			-- Remove connection.
 			connection.Connected = false
 			
 			local previous = connection.Previous
 			local next = connection.Next
-			previous.Next = next
-			if next then
-				next.Previous = previous
-			end
+			if previous then previous.Next = next end
+			if next then next.Previous = previous end
 			
 			-- Resume the thread.
 			if coroutine.status(thread) == "suspended" then -- To avoid errors.
@@ -228,17 +221,18 @@ Signal.Wait = function(signal)
 	}
 	
 	-- Add connection.
-	if next then
-		next.Previous = connection
+	if tail then
+		tail.Next = connection
+	else
+		signal.Tail = connection
 	end
-	signal.Next = connection
 	
 	-- Yield until the next fire, and return the arguments on resume.
 	return coroutine.yield()
 end
 
 Signal.Fire = function(signal, ...)
-	local connection = signal.Next
+	local connection = signal.Tail
 	while connection do
 		-- Find or create a thread, and run the callback in it.
 		local length = #threads
@@ -258,11 +252,15 @@ Signal.Fire = function(signal, ...)
 end
 
 Signal.DisconnectAll = function(signal)
-	signal.Next = nil
+	signal.Tail = nil
+	signal.Head = nil
 end
 Signal.Destroy = function(signal)
-	signal.Next = nil -- Disconnect all connections.
-	setmetatable(signal, nil) -- Unlink methods.
+	-- Disconnect all connections.
+	signal.Tail = nil
+	signal.Head = nil
+	-- Unlink methods.
+	setmetatable(signal, nil)
 end
 
 -- Return signal creation function.
