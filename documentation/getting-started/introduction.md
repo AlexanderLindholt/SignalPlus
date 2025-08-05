@@ -17,13 +17,16 @@ layout:
 
 # Introduction
 
-When you require the module, it will return a function, which you can use to create signals.\
-For example:
+When you require the module, it will return a function, which you can use to create signals.
+
+Example:
 
 ```lua
 local Signal = require(path.to.SignalPlus)
 
 local signal = Signal() -- Creates a new signal.
 ```
+
+
 
 You can then use methods to control and fire connections on the signal — just like BindableEvents and other signal alternatives.
