@@ -1,5 +1,19 @@
 ---
 icon: list
+layout:
+  width: default
+  title:
+    visible: true
+  description:
+    visible: false
+  tableOfContents:
+    visible: true
+  outline:
+    visible: true
+  pagination:
+    visible: true
+  metadata:
+    visible: true
 ---
 
 # API Reference
@@ -14,8 +28,6 @@ icon: list
 | Fire          | Method | Fires all callbacks and resumes all waiting threads.                                                                        |
 | DisconnectAll | Method | Disconnects all connections.                                                                                                |
 | Destroy       | Method | Disconnects all connections, and makes the signal unusable.                                                                 |
-
-
 
 ## Connection:
 
