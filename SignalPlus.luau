@@ -20,7 +20,7 @@
  +++++++++++++++++++++++++                                                                          
       +++++                                                                                         
 
-v3.4.0
+v3.5.0
 
 An insanely fast, lightweight, fully typed and documented
 open-source signal module for Roblox, with dynamic types.
@@ -63,38 +63,39 @@ SOFTWARE.
 export type Connection = {
 	Connected: boolean,
 	Disconnect: typeof(
-		-- Disconnects the connection.
-		-- To reconnect, make a new connection.
+		-- Erases the connection.
 		function(connection: Connection) end
-	),
+	)
 }
 export type Signal<Parameters...> = {
 	Connect: typeof(
-		-- Connects the given function.
+		-- Connects a function.
 		function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end
 	),
 	Once: typeof(
-		-- Connects the given function, but disconnects after first fire.
+		-- Connects a function, then auto-disconnects after the first call.
 		function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end
 	),
 	Wait: typeof(
-		-- Yields the current thread until the next fire.
+		-- Yields the calling thread until the next fire.
 		function(signal: Signal<Parameters...>): Parameters... end
 	),
 	
 	Fire: typeof(
-		-- Fires all callbacks and resumes all waiting threads.
+		-- Runs all connected functions, and resumes all waiting threads.
 		function(signal: Signal<Parameters...>, ...: Parameters...) end
 	),
 	
 	DisconnectAll: typeof(
-		-- Disconnects all connections.
+		-- Erases all connections.<br>
+		-- <em>Much faster than calling <code>Disconnect</code> on each.</em>
 		function(signal: Signal<Parameters...>) end
 	),
 	Destroy: typeof(
-		-- Disconnects all connections, and makes the signal unusable.
+		-- Erases all connections and methods, making the signal unusable.<br>
+		-- Remove references to the signal to delete it completely.
 		function(signal: Signal<Parameters...>) end
-	),
+	)
 }
 type CreateSignal = typeof(
 	-- Creates a new signal.
@@ -113,7 +114,7 @@ local function reusableThread()
 	end
 end
 
--- Connection functions.
+-- Connection methods.
 local Connection = {}
 Connection.__index = Connection
 
@@ -124,54 +125,79 @@ Connection.Disconnect = function(connection)
 	-- Remove connection.
 	connection.Connected = false
 	
+	local signal = connection.Signal
 	local previous = connection.Previous
 	local next = connection.Next
-	if previous then previous.Next = next end
-	if next then next.Previous = previous end
+	if previous then
+		previous.Next = next
+	else
+		signal.Tail = next
+	end
+	if next then
+		next.Previous = previous
+	else
+		signal.Head = previous
+	end
 end
 
--- Signal functions.
+-- Signal methods.
 local Signal = {}
 Signal.__index = Signal
 
 Signal.Connect = function(signal, callback)
-	-- Cache linked list next.
-	local tail = signal.Tail
+	-- Cache linked list head.
+	local head = signal.Head
 	
 	-- Create connection.
 	local connection = {
-		Previous = signal.Head,
+		Signal = signal,
+		
+		Previous = head,
 		Callback = callback,
 		
 		Connected = true
 	}
 	
 	-- Add connection.
-	if tail then
-		tail.Next = connection
+	if head then
+		head.Next = connection
 	else
 		signal.Tail = connection
 	end
+	signal.Head = connection
 	
 	-- Return connection.
 	return setmetatable(connection, Connection)
 end
 Signal.Once = function(signal, callback)
-	-- Cache linked list next.
-	local tail = signal.Tail
+	-- Cache linked list head.
+	local head = signal.Head
 	
 	-- Create connection.
 	local connection = nil
 	connection = {
-		Previous = signal.Head,
+		Signal = signal,
+		
+		Previous = head,
 		Callback = function(...)
+			-- Verify connection.
+			if not connection.Connected then return end
+			
 			-- Remove connection.
 			connection.Connected = false
 			
 			local previous = connection.Previous
 			local next = connection.Next
-			if previous then previous.Next = next end
-			if next then next.Previous = previous end
+			if previous then
+				previous.Next = next
+			else
+				signal.Tail = next
+			end
+			if next then
+				next.Previous = previous
+			else
+				signal.Head = previous
+			end
 			
 			-- Fire callback.
 			callback(...)
@@ -181,11 +207,12 @@ Signal.Once = function(signal, callback)
 	}
 	
 	-- Add connection.
-	if tail then
-		tail.Next = connection
+	if head then
+		head.Next = connection
 	else
 		signal.Tail = connection
 	end
+	signal.Head = connection
 	
 	-- Return connection.
 	return setmetatable(connection, Connection)
@@ -194,21 +221,31 @@ Signal.Wait = function(signal)
 	-- Save this thread to resume later.
 	local thread = coroutine.running()
 	
-	-- Cache linked list next.
-	local tail = signal.Tail
+	-- Cache linked list head.
+	local head = signal.Head
 	
 	-- Create connection.
 	local connection = nil
 	connection = {
-		Previous = signal.Head,
+		Signal = signal,
+		
+		Previous = head,
 		Callback = function(...)
 			-- Remove connection.
 			connection.Connected = false
 			
 			local previous = connection.Previous
 			local next = connection.Next
-			if previous then previous.Next = next end
-			if next then next.Previous = previous end
+			if previous then
+				previous.Next = next
+			else
+				signal.Tail = next
+			end
+			if next then
+				next.Previous = previous
+			else
+				signal.Head = previous
+			end
 			
 			-- Resume the thread.
 			if coroutine.status(thread) == "suspended" then -- To avoid errors.
@@ -221,18 +258,19 @@ Signal.Wait = function(signal)
 	}
 	
 	-- Add connection.
-	if tail then
-		tail.Next = connection
+	if head then
+		head.Next = connection
 	else
 		signal.Tail = connection
 	end
+	signal.Head = connection
 	
 	-- Yield until the next fire, and return the arguments on resume.
 	return coroutine.yield()
 end
 
 Signal.Fire = function(signal, ...)
-	local connection = signal.Tail
+	local connection = signal.Tail -- Start from the tail (back) of the list.
 	while connection do
 		-- Find or create a thread, and run the callback in it.
 		local length = #threads
@@ -252,18 +290,19 @@ Signal.Fire = function(signal, ...)
 end
 
 Signal.DisconnectAll = function(signal)
+	-- Remove references, so that the connections will be garbage collected.
 	signal.Tail = nil
 	signal.Head = nil
 end
 Signal.Destroy = function(signal)
-	-- Disconnect all connections.
+	-- Remove references, so that the connections will be garbage collected.
 	signal.Tail = nil
 	signal.Head = nil
-	-- Unlink methods.
+	-- Unlink signal methods.
 	setmetatable(signal, nil)
 end
 
--- Return signal creation function.
+-- Signal creation function.
 return function()
-	return setmetatable({}, Signal)
+	return setmetatable({}, Signal) -- New, blank metatable with the methods attached.
 end :: CreateSignal
