@@ -24,4 +24,4 @@ Good-, Lemon- and FastSignal.**
 <br>
 <br>
 
-# Tutorial and documentation at the DevForum post.
+## Check out the [guides and documentation](https://alexxander.gitbook.io/signalplus) to learn all about it!
