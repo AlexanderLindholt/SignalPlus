@@ -17,12 +17,10 @@ layout:
 
 # Introduction
 
-When you require the module, it will return a function, which you can use to create signals.
-
-Example:
+When you require the module, it'll return a function, which you can use to create signals:
 
 ```lua
-local Signal = require(path.to.SignalPlus)
+local Signal = require(script.SignalPlus)
 
 local signal = Signal() -- Creates a new signal.
 ```

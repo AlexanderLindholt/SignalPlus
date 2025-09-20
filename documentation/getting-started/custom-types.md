@@ -29,4 +29,4 @@ You can provide your own parameters as shown in the screenshot above:
 local mySignal = Signal() :: Signal.Signal<PARAMETERS_HERE>
 ```
 
-All methods ( `Connect`, `Once`, `Wait`, and `Fire`) will display your desired parameters.
+All methods (`Connect`, `Once`, `Wait`, and `Fire`) will display your desired parameters.

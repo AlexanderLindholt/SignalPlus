@@ -13,7 +13,3 @@ And it still has all the features you'll ever need!
 **Good-, Lemon- and FastSignal.**
 
 _The perfect replacement for_ [_BindableEvents_](https://create.roblox.com/docs/reference/engine/classes/BindableEvent)_._
-
-
-
-**Learn all about it in this detailed guide and documentation!**

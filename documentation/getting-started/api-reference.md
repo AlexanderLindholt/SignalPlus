@@ -18,7 +18,7 @@ layout:
 
 # API Reference
 
-## Signal:
+## `Signal`:
 
 | Name          | Type   | Description                                                                                                                               |
 | ------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,7 +29,7 @@ layout:
 | DisconnectAll | Method | <p>Erases all connections.<br></p><p><strong>Much faster than calling <code>Disconnect</code> on each.</strong></p>                       |
 | Destroy       | Method | <p>Erases all connections and methods, making the signal unusable.</p><p><br>Remove references to the signal to delete it completely.</p> |
 
-## Connection:
+## `Connection`:
 
 | Name       | Type     | Description                                  |
 | ---------- | -------- | -------------------------------------------- |
