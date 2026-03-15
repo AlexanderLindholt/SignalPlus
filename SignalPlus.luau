@@ -20,7 +20,7 @@
  +++++++++++++++++++++++++                                                                          
       +++++                                                                                         
 
-v3.7.1
+v3.7.2
 
 An exceptionally fast, lightweight, and elegant open-source signal
 library for Luau - with generic types and detailed documentation.
@@ -63,15 +63,6 @@ SOFTWARE.
 ]]--
 
 -- Types.
-export type Connection = {
-	Signal: Signal,
-	Connected: boolean,
-	Disconnect: typeof(
-		-- Removes the connection from the signal.
-		-- <strong>The connection's data remains.</strong>
-		function(connection: Connection) end
-	)
-}
 export type Signal<Parameters...> = {
 	Connect: typeof(
 		-- Connects a function.
@@ -100,6 +91,15 @@ export type Signal<Parameters...> = {
 		-- Erases all connections and methods.
 		-- <strong>To fully erase, also remove all references to the signal.</strong>
 		function(signal: Signal<Parameters...>) end
+	)
+}
+export type Connection = {
+	Signal: Signal,
+	Connected: boolean,
+	Disconnect: typeof(
+		-- Removes the connection from the signal.
+		-- <strong>The connection's data remains.</strong>
+		function(connection: Connection) end
 	)
 }
 type CreateSignal = typeof(
