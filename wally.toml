@@ -1,0 +1,12 @@
+[package]
+name = "alexanderlindholt/signalplus"
+version = "3.7.2"
+description = "An exceptionally fast, lightweight, and elegant open-source signal library for Luau - with generic types and detailed documentation."
+keywords = ["generic", "event", "fast", "signal", "performance", "optimization", "efficient"]
+authors = ["Alexander Lindholt"]
+license = "MIT"
+
+realm = "shared"
+
+registry = "https://github.com/upliftgames/wally-index"
+repository = "https://github.com/AlexanderLindholt/SignalPlus"
