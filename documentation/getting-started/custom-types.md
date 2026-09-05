@@ -14,11 +14,15 @@ layout:
     visible: true
   metadata:
     visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Generic types
 
-It’s super easy to define generic types for your signals with Signal+.\
+It’s super easy to define types for your signals with Signal+.\
 This means you can have autocompletion for the [parameters](https://create.roblox.com/docs/tutorials/fundamentals/coding-2/use-parameters-and-events) in your signals:
 
 <figure><img src="../.gitbook/assets/Custom type example.png" alt=""><figcaption></figcaption></figure>

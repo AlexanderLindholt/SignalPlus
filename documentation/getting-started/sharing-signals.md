@@ -14,22 +14,23 @@ layout:
     visible: true
   metadata:
     visible: true
+  tags:
+    visible: true
+  actions:
+    visible: true
 ---
 
 # Sharing signals
 
-Should you be in doubt, here are the main ways to share signals between scripts:
+There are two main ways to share signals between scripts:
 
-<details>
-
-<summary>Modules</summary>
-
+{% tabs %}
+{% tab title="Modules" %}
 You can return a table of signals in a ModuleScript, which multiple other scripts can then require and thereby access the same signals and communicate.
 
 Scripts can also add or remove signals from the ModuleScript at any time.
 
-
-
+\
 Example:
 
 {% code title="Signals (ModuleScript)" %}
@@ -64,19 +65,14 @@ coolSignal:Connect(function()
 end)
 ```
 {% endcode %}
+{% endtab %}
 
-</details>
+{% tab title="Built-in shared table" %}
+You can store signals in the built-in Roblox shared table, which multiple scripts can access and thereby communicate.
 
-<details>
+Any script can add or remove signals from the shared table at any time.
 
-<summary>Built-in shared table (Roblox-specific)</summary>
-
-You can store signals in the built-in shared table, which multiple other scripts can then access and thereby access the same signals and communicate.
-
-Scripts can also add or remove signals from the shared table at any time.
-
-
-
+\
 Example:
 
 {% code title="Some script" %}
@@ -99,5 +95,5 @@ shared.CoolSignal:Connect(function()
 end)
 ```
 {% endcode %}
-
-</details>
+{% endtab %}
+{% endtabs %}
