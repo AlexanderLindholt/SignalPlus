@@ -16,8 +16,8 @@ library for Luau — with generic types and detailed documentation.
 Signal+ is built for developers who demand performance without compromise.<br>
 It’s fast, reliable, and equipped with every feature that matters.
 
-**It easily outperforms leading alternatives like<br>
-Good-, Lemon-, and FastSignal — in both design and execution.**
+It easily outperforms popular alternatives like<br>
+Good-, Lemon-, and FastSignal – in both design and execution.
 <br>
 <br>
 
